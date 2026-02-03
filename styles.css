@@ -1,1 +1,155 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    position: relative;
+}
+
+header h1 {
+    color: #d63031;
+    margin-bottom: 15px;
+    font-size: 2.5em;
+}
+
+header p {
+    color: #2d3436;
+    margin: 10px 0;
+    font-size: 1.1em;
+}
+
+.subtitle {
+    font-style: italic;
+    color: #636e72;
+    font-size: 0.95em !important;
+}
+
+.admin-link {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #0984e3;
+    color: white;
+    padding: 8px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 0.9em;
+    transition: background 0.3s;
+}
+
+.admin-link:hover {
+    background: #0770c9;
+}
+
+main {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#rankings-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.loading {
+    text-align: center;
+    color: #636e72;
+    padding: 40px;
+    font-size: 1.2em;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    transition: background 0.3s;
+}
+
+.ranking-item:hover {
+    background: #f8f9fa;
+}
+
+.ranking-item:last-child {
+    border-bottom: none;
+}
+
+.rank-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: #d63031;
+    min-width: 60px;
+}
+
+.ice-cream-info {
+    flex: 1;
+    margin: 0 20px;
+}
+
+.ice-cream-name {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #2d3436;
+    margin-bottom: 5px;
+}
+
+.ice-cream-location {
+    color: #636e72;
+    font-size: 1em;
+}
+
+.stars {
+    font-size: 1.5em;
+    color: #fdcb6e;
+    min-width: 140px;
+    text-align: right;
+}
+
+.star-filled {
+    color: #f39c12;
+}
+
+.star-empty {
+    color: #dfe6e9;
+}
+
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+    
+    .ranking-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .rank-number {
+        margin-bottom: 10px;
+    }
+    
+    .ice-cream-info {
+        margin: 10px 0;
+    }
+    
+    .stars {
+        text-align: center;
+    }
+}
