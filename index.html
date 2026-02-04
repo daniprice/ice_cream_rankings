@@ -48,7 +48,7 @@
             const container = document.getElementById('rankings-container');
             
             try {
-                const q = query(collection(db, 'rankings'), orderBy('rating', 'desc'));
+                const q = query(collection(db, 'rankings'), orderBy('displayOrder', 'asc'));
                 const querySnapshot = await getDocs(q);
                 
                 if (querySnapshot.empty) {
