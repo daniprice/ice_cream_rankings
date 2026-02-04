@@ -153,12 +153,14 @@
         });
 
         // Add ranking form handler
+        // Add ranking form handler
         document.getElementById('add-ranking-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const name = document.getElementById('shop-name').value;
             const location = document.getElementById('shop-location').value;
             const rating = parseFloat(document.getElementById('shop-rating').value);
+            const notes = document.getElementById('shop-notes').value.trim();
             
             const successDiv = document.getElementById('add-success');
             const errorDiv = document.getElementById('add-error');
@@ -169,13 +171,20 @@
                     ? Math.max(...allRankings.map(r => r.displayOrder)) 
                     : 0;
                 
-                await addDoc(collection(db, 'rankings'), {
+                const rankingData = {
                     name: name,
                     location: location,
                     rating: rating,
                     displayOrder: maxOrder + 1,
                     createdAt: new Date()
-                });
+                };
+                
+                // Only add notes if they exist
+                if (notes) {
+                    rankingData.notes = notes;
+                }
+                
+                await addDoc(collection(db, 'rankings'), rankingData);
                 
                 successDiv.textContent = `Successfully added ${name}! Use the reorder section below to adjust its position.`;
                 successDiv.style.display = 'block';
@@ -238,6 +247,7 @@
             let html = '';
             
             allRankings.forEach((ranking, index) => {
+                const notesHtml = ranking.notes ? `<div class="sortable-notes">${ranking.notes}</div>` : '';
                 html += `
                     <div class="sortable-item" data-id="${ranking.id}" draggable="true">
                         <div class="sortable-item-info">
@@ -246,6 +256,7 @@
                             <div class="sortable-details">
                                 <div class="sortable-name">${ranking.name}</div>
                                 <div class="sortable-location">${ranking.location}</div>
+                                ${notesHtml}
                             </div>
                             <span class="sortable-rating">${renderStars(ranking.rating)}</span>
                         </div>
@@ -387,12 +398,14 @@
                 let rank = 1;
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
+                    const notesHtml = data.notes ? `<div class="ice-cream-notes">${data.notes}</div>` : '';
                     html += `
                         <div class="ranking-item">
                             <div class="rank-number">#${rank}</div>
                             <div class="ice-cream-info">
                                 <div class="ice-cream-name">${data.name}</div>
                                 <div class="ice-cream-location">${data.location}</div>
+                                ${notesHtml}
                             </div>
                             <div class="stars">${renderStars(data.rating)}</div>
                         </div>
