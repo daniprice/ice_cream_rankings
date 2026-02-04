@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #00eaaa 0%, #00eaaa 100%);
+    background: linear-gradient(135deg, #9ab1a3 0%, #9ab1a3 100%);
     min-height: 100vh;
     padding: 20px;
 }
@@ -22,13 +22,13 @@ header {
 }
 
 header h1 {
-    color: #dd3031;
+    color: #422e42;
     margin-bottom: 15px;
     font-size: 2.5em;
 }
 
 header p {
-    color: #2d3436;
+    color: #b8a3aa;
     margin: 10px 0;
     font-size: 1.1em;
 }
@@ -43,7 +43,7 @@ header p {
     position: absolute;
     top: 20px;
     right: 20px;
-    background: #0984e3;
+    background: #5cbdf0;
     color: white;
     padding: 8px 15px;
     text-decoration: none;
@@ -53,7 +53,7 @@ header p {
 }
 
 .admin-link:hover {
-    background: #0770c9;
+    background: #b8a3aa;
 }
 
 main {
@@ -70,7 +70,7 @@ main {
 
 .loading {
     text-align: center;
-    color: #636e72;
+    color: #b8a3aa;
     padding: 40px;
     font-size: 1.2em;
 }
@@ -80,12 +80,12 @@ main {
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 2px solid #442e42;
     transition: background 0.3s;
 }
 
 .ranking-item:hover {
-    background: #f8f9fa;
+    background: #b8a3aa;
 }
 
 .ranking-item:last-child {
@@ -95,7 +95,7 @@ main {
 .rank-number {
     font-size: 2em;
     font-weight: bold;
-    color: #d63031;
+    color: #442e42;
     min-width: 60px;
 }
 
@@ -107,24 +107,24 @@ main {
 .ice-cream-name {
     font-size: 1.4em;
     font-weight: bold;
-    color: #2d3436;
+    color: #5cbdf0;
     margin-bottom: 5px;
 }
 
 .ice-cream-location {
-    color: #636e72;
+    color: #442e42;
     font-size: 1em;
 }
 
 .stars {
     font-size: 1.5em;
-    color: #fdcb6e;
+    color: #b8a3aa;
     min-width: 140px;
     text-align: right;
 }
 
 .star-filled {
-    color: #f39c12;
+    color: #b8a3aa;
 }
 
 .star-empty {
