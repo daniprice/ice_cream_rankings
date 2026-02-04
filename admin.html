@@ -97,7 +97,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         import firebaseConfig from './firebase-config.js';
 
         // Initialize Firebase
@@ -105,10 +105,13 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        let allRankings = []; // Store all rankings with their IDs
+
         // Check authentication state
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 showDashboard();
+                loadSortableRankings();
                 loadAdminRankings();
             } else {
                 showLogin();
@@ -149,38 +152,41 @@
             const name = document.getElementById('shop-name').value;
             const location = document.getElementById('shop-location').value;
             const rating = parseFloat(document.getElementById('shop-rating').value);
-            const displayOrder = parseInt(document.getElementById('shop-order').value);
             
             const successDiv = document.getElementById('add-success');
             const errorDiv = document.getElementById('add-error');
             
             try {
+                // Get the highest displayOrder and add 1
+                const maxOrder = allRankings.length > 0 
+                    ? Math.max(...allRankings.map(r => r.displayOrder)) 
+                    : 0;
+                
                 await addDoc(collection(db, 'rankings'), {
                     name: name,
                     location: location,
                     rating: rating,
-                    displayOrder: displayOrder,
+                    displayOrder: maxOrder + 1,
                     createdAt: new Date()
                 });
                 
-                successDiv.textContent = `Successfully added ${name}!`;
+                successDiv.textContent = `Successfully added ${name}! Use the reorder section below to adjust its position.`;
                 successDiv.style.display = 'block';
                 errorDiv.style.display = 'none';
                 
                 document.getElementById('add-ranking-form').reset();
+                loadSortableRankings();
                 loadAdminRankings();
                 
                 setTimeout(() => {
                     successDiv.style.display = 'none';
-                }, 3000);
+                }, 5000);
             } catch (error) {
                 errorDiv.textContent = 'Error adding ranking. Please try again.';
                 errorDiv.style.display = 'block';
                 console.error("Error adding ranking:", error);
             }
         });
-
-        
 
         function showDashboard() {
             document.getElementById('login-section').style.display = 'none';
@@ -190,6 +196,172 @@
         function showLogin() {
             document.getElementById('login-section').style.display = 'block';
             document.getElementById('admin-dashboard').style.display = 'none';
+        }
+
+        async function loadSortableRankings() {
+            const container = document.getElementById('sortable-rankings');
+            
+            try {
+                const q = query(collection(db, 'rankings'), orderBy('displayOrder', 'asc'));
+                const querySnapshot = await getDocs(q);
+                
+                // Store rankings with their document IDs
+                allRankings = [];
+                querySnapshot.forEach((doc) => {
+                    allRankings.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (allRankings.length === 0) {
+                    container.innerHTML = '<div class="loading">No rankings yet. Add your first one above!</div>';
+                    return;
+                }
+                
+                renderSortableList();
+            } catch (error) {
+                console.error("Error loading rankings:", error);
+                container.innerHTML = '<div class="loading">Error loading rankings.</div>';
+            }
+        }
+
+        function renderSortableList() {
+            const container = document.getElementById('sortable-rankings');
+            let html = '';
+            
+            allRankings.forEach((ranking, index) => {
+                html += `
+                    <div class="sortable-item" data-id="${ranking.id}" draggable="true">
+                        <div class="sortable-item-info">
+                            <span class="drag-handle">☰</span>
+                            <span class="sortable-rank">#${index + 1}</span>
+                            <div class="sortable-details">
+                                <div class="sortable-name">${ranking.name}</div>
+                                <div class="sortable-location">${ranking.location}</div>
+                            </div>
+                            <span class="sortable-rating">${renderStars(ranking.rating)}</span>
+                        </div>
+                        <div class="reorder-controls">
+                            <button class="arrow-btn" onclick="moveUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="arrow-btn" onclick="moveDown(${index})" ${index === allRankings.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="delete-btn" onclick="deleteRanking('${ranking.id}', '${ranking.name}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            setupDragAndDrop();
+        }
+
+        // Make functions globally available
+        window.moveUp = async (index) => {
+            if (index === 0) return;
+            
+            // Swap positions
+            [allRankings[index], allRankings[index - 1]] = [allRankings[index - 1], allRankings[index]];
+            
+            await saveNewOrder();
+        };
+
+        window.moveDown = async (index) => {
+            if (index === allRankings.length - 1) return;
+            
+            // Swap positions
+            [allRankings[index], allRankings[index + 1]] = [allRankings[index + 1], allRankings[index]];
+            
+            await saveNewOrder();
+        };
+
+        window.deleteRanking = async (id, name) => {
+            if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+            
+            try {
+                await deleteDoc(doc(db, 'rankings', id));
+                await loadSortableRankings();
+                await loadAdminRankings();
+            } catch (error) {
+                console.error("Error deleting ranking:", error);
+                alert("Error deleting ranking. Please try again.");
+            }
+        };
+
+        async function saveNewOrder() {
+            try {
+                const batch = writeBatch(db);
+                
+                allRankings.forEach((ranking, index) => {
+                    const docRef = doc(db, 'rankings', ranking.id);
+                    batch.update(docRef, { displayOrder: index + 1 });
+                });
+                
+                await batch.commit();
+                renderSortableList();
+                loadAdminRankings();
+            } catch (error) {
+                console.error("Error saving order:", error);
+                alert("Error saving new order. Please try again.");
+            }
+        }
+
+        function setupDragAndDrop() {
+            const items = document.querySelectorAll('.sortable-item');
+            let draggedItem = null;
+            let draggedIndex = null;
+
+            items.forEach((item, index) => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = item;
+                    draggedIndex = index;
+                    item.classList.add('dragging');
+                });
+
+                item.addEventListener('dragend', (e) => {
+                    item.classList.remove('dragging');
+                });
+
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(e.clientY);
+                    if (afterElement == null) {
+                        document.getElementById('sortable-rankings').appendChild(draggedItem);
+                    } else {
+                        document.getElementById('sortable-rankings').insertBefore(draggedItem, afterElement);
+                    }
+                });
+
+                item.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    
+                    // Calculate new index based on DOM position
+                    const allItems = [...document.querySelectorAll('.sortable-item')];
+                    const newIndex = allItems.indexOf(draggedItem);
+                    
+                    if (newIndex !== draggedIndex) {
+                        // Reorder the array
+                        const [removed] = allRankings.splice(draggedIndex, 1);
+                        allRankings.splice(newIndex, 0, removed);
+                        
+                        await saveNewOrder();
+                    }
+                });
+            });
+        }
+
+        function getDragAfterElement(y) {
+            const draggableElements = [...document.querySelectorAll('.sortable-item:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
         async function loadAdminRankings() {
@@ -205,11 +377,12 @@
                 }
                 
                 let html = '';
+                let rank = 1;
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     html += `
                         <div class="ranking-item">
-                            <div class="rank-number">#${data.displayOrder}</div>
+                            <div class="rank-number">#${rank}</div>
                             <div class="ice-cream-info">
                                 <div class="ice-cream-name">${data.name}</div>
                                 <div class="ice-cream-location">${data.location}</div>
@@ -217,6 +390,7 @@
                             <div class="stars">${renderStars(data.rating)}</div>
                         </div>
                     `;
+                    rank++;
                 });
                 
                 container.innerHTML = html;
@@ -225,7 +399,7 @@
                 container.innerHTML = '<div class="loading">Error loading rankings.</div>';
             }
         }
-        
+
         function renderStars(rating) {
             let stars = '';
             for (let i = 1; i <= 5; i++) {
