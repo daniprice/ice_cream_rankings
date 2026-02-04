@@ -16,11 +16,72 @@
 
     <main>
         <div id="rankings-container">
-            <!-- Rankings will be loaded here by JavaScript -->
             <div class="loading">Loading rankings...</div>
         </div>
     </main>
 
-    <script type="module" src="app.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import firebaseConfig from './firebase-config.js';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function renderStars(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<span class="star-filled">★</span>';
+                } else if (i - 0.5 === rating) {
+                    stars += '<span class="star-filled">½</span>';
+                } else {
+                    stars += '<span class="star-empty">☆</span>';
+                }
+            }
+            return stars;
+        }
+
+        async function loadRankings() {
+            const container = document.getElementById('rankings-container');
+            
+            try {
+                const q = query(collection(db, 'rankings'), orderBy('rating', 'desc'));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<div class="loading">No rankings yet. Check back soon!</div>';
+                    return;
+                }
+                
+                let html = '';
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    html += `
+                        <div class="ranking-item">
+                            <div class="rank-number">#${rank}</div>
+                            <div class="ice-cream-info">
+                                <div class="ice-cream-name">${data.name}</div>
+                                <div class="ice-cream-location">${data.location}</div>
+                            </div>
+                            <div class="stars">${renderStars(data.rating)}</div>
+                        </div>
+                    `;
+                    rank++;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Error loading rankings:", error);
+                container.innerHTML = '<div class="loading">Error loading rankings. Please try again later.</div>';
+            }
+        }
+
+        // Load rankings when page loads
+        loadRankings();
+    </script>
 </body>
 </html>
