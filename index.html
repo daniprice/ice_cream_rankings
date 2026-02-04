@@ -57,18 +57,22 @@
                 }
                 
                 let html = '';
+                let rank = 1;
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
+                    const notesHtml = data.notes ? `<div class="ice-cream-notes">${data.notes}</div>` : '';
                     html += `
                         <div class="ranking-item">
-                            <div class="rank-number">#${data.displayOrder}</div>
+                            <div class="rank-number">#${rank}</div>
                             <div class="ice-cream-info">
                                 <div class="ice-cream-name">${data.name}</div>
                                 <div class="ice-cream-location">${data.location}</div>
+                                ${notesHtml}
                             </div>
                             <div class="stars">${renderStars(data.rating)}</div>
                         </div>
                     `;
+                    rank++;
                 });
                 
                 container.innerHTML = html;
