@@ -75,6 +75,150 @@
         </div>
     </main>
 
-    <script type="module" src="admin.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import firebaseConfig from './firebase-config.js';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Check authentication state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                showDashboard();
+                loadAdminRankings();
+            } else {
+                showLogin();
+            }
+        });
+
+        // Login form handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                errorDiv.style.display = 'none';
+            } catch (error) {
+                errorDiv.textContent = 'Invalid email or password';
+                errorDiv.style.display = 'block';
+                console.error("Login error:", error);
+            }
+        });
+
+        // Logout handler
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+        });
+
+        // Add ranking form handler
+        document.getElementById('add-ranking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('shop-name').value;
+            const location = document.getElementById('shop-location').value;
+            const rating = parseFloat(document.getElementById('shop-rating').value);
+            
+            const successDiv = document.getElementById('add-success');
+            const errorDiv = document.getElementById('add-error');
+            
+            try {
+                await addDoc(collection(db, 'rankings'), {
+                    name: name,
+                    location: location,
+                    rating: rating,
+                    createdAt: new Date()
+                });
+                
+                successDiv.textContent = `Successfully added ${name}!`;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                
+                document.getElementById('add-ranking-form').reset();
+                loadAdminRankings();
+                
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 3000);
+            } catch (error) {
+                errorDiv.textContent = 'Error adding ranking. Please try again.';
+                errorDiv.style.display = 'block';
+                console.error("Error adding ranking:", error);
+            }
+        });
+
+        function showDashboard() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('admin-dashboard').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('admin-dashboard').style.display = 'none';
+        }
+
+        async function loadAdminRankings() {
+            const container = document.getElementById('admin-rankings-list');
+            
+            try {
+                const q = query(collection(db, 'rankings'), orderBy('rating', 'desc'));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<div class="loading">No rankings yet.</div>';
+                    return;
+                }
+                
+                let html = '';
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    html += `
+                        <div class="ranking-item">
+                            <div class="rank-number">#${rank}</div>
+                            <div class="ice-cream-info">
+                                <div class="ice-cream-name">${data.name}</div>
+                                <div class="ice-cream-location">${data.location}</div>
+                            </div>
+                            <div class="stars">${renderStars(data.rating)}</div>
+                        </div>
+                    `;
+                    rank++;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Error loading rankings:", error);
+                container.innerHTML = '<div class="loading">Error loading rankings.</div>';
+            }
+        }
+
+        function renderStars(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<span class="star-filled">★</span>';
+                } else if (i - 0.5 === rating) {
+                    stars += '<span class="star-filled">½</span>';
+                } else {
+                    stars += '<span class="star-empty">☆</span>';
+                }
+            }
+            return stars;
+        }
+    </script>
 </body>
 </html>
