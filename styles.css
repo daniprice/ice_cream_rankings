@@ -412,3 +412,33 @@ main {
 .delete-btn:hover {
     background: #c0392b;
 }
+
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #dfe6e9;
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: border-color 0.3s;
+    resize: vertical;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #0984e3;
+}
+
+.ice-cream-notes {
+    color: #636e72;
+    font-size: 0.9em;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.sortable-notes {
+    color: #636e72;
+    font-size: 0.85em;
+    font-style: italic;
+    margin-top: 3px;
+}
